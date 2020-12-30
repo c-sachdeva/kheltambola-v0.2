@@ -1,3 +1,10 @@
+## Requirements
+python=3.7.6
+django=3.1.3
+mysqlclient=2.0.1
+channels=3.0.2
+numpy=1.18.1
+
 ## How to start?
 ```
 git clone https://github.com/c-sachdeva/kheltambola.git
