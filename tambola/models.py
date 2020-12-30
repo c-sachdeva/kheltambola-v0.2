@@ -28,6 +28,7 @@ class GameRoomStats(models.Model):
     numbers_called = models.JSONField()
     winners = models.JSONField()
     chat = models.JSONField()
+    host = models.CharField(max_length = 100)
 
 class GameRoom(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name="profile_gameroom", primary_key=True)

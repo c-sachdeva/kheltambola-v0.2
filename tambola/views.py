@@ -106,22 +106,18 @@ def generate_ticket_json(request, room_name):
     numbers_called = json.dumps(list())
     winners = json.dumps({})
     chat = json.dumps({})
-    room_stats = GameRoomStats(room_name=room_name, numbers_pot=numbers_pot, numbers_called=numbers_called, winners = winners, chat = chat)
-    room_stats.save()
+    room_stats = None
+    try:
+        room_stats = GameRoomStats.objects.filter(room_name= room_name)[0]
+        print("GameRoomStats for already exists for ", room_name)
+    except:    
+        room_stats = GameRoomStats(room_name=room_name, numbers_pot=numbers_pot, numbers_called=numbers_called, winners = winners, chat = chat, host = request.user.username)
+        room_stats.save()
+        print("GameRoomStats created for ", room_name)
 
     game_room = GameRoom(profile=request.user.user_profile.first(), room_stats = room_stats, ticket = new_ticket, clicked = new_clicked)
     game_room.save()
-
-    
-    # Profile.objects.filter(id_user = request.user)[0]
-    # print(len(Ticket.objects.all()))
-    # print("new ticket profile: ", new_ticket.profile.id_user.username)
-    # print("new ticket json: ", new_ticket.ticket_json)
-    # print("new ticket row maker: ", new_ticket.row_bottom_marked)
-
-    # response = HttpResponse(response_json, content_type='application/json')
-    # response['Access-Control-Allow-Origin'] = '*'
-    # return response
+   
   
     return new_ticket, new_clicked
 
@@ -131,13 +127,26 @@ def _my_json_error_response(message, status=200):
     return HttpResponse(response_json, content_type='application/json', status=status)
     
 
+def users_in_room(room_name):
+    game_room_obj = GameRoom.objects.filter(room_stats_id=room_name)
+    game_room_obj_val = game_room_obj.values()
+    users_in_room = []
+    
+    for i in game_room_obj_val:
+        curr_id = i['profile_id']
+        person = User.objects.filter(id=curr_id)[0]
+        users_in_room.append(person.username)
+
+    return users_in_room   
+
 @ensure_csrf_cookie
 @login_required
 def room(request, room_name):
   
 
     new_ticket, new_clicked = generate_ticket_json(request, room_name)
-
+    host = GameRoomStats.objects.filter(room_name= room_name)[0].host
+    users = users_in_room(room_name)
 
     clicked_dict = json.loads(new_clicked.clickList_json)
     print("Initialize room :")
@@ -146,7 +155,9 @@ def room(request, room_name):
     ticket_numbers = json.loads(new_ticket.ticket_json)
     print(ticket_numbers)
 
-    context = {'room_name': room_name,'user_profile': request.user.user_profile.first(), 'ticket_numbers':ticket_numbers}
+    displayHostButton = not host == request.user.username
+
+    context = {'room_name': room_name,'user_profile': request.user.user_profile.first(), 'ticket_numbers':ticket_numbers, "host":host, "ishost": displayHostButton, "users_in_room":users }
     return render(request, 'tambola/room.html', context)
 
 
@@ -269,21 +280,17 @@ def check_for_winner(request, ticket_clicked, ticket_numbers, game_room):
 # starting game and drawing numbers
 
 def start_game(request, room_name):
-
-    pot_numbers = map(str,  list(range(1, 91)))
-    numbers_pot = json.dumps(list(pot_numbers))
-    
-    # called_numbers = map(str,  list(range(1, 10)))
-    # numbers_called = json.dumps(list(called_numbers))
     game_room = GameRoom.objects.filter(profile=request.user.user_profile.first())[0]
-    game_room.room_stats.numbers_pot = numbers_pot
-    game_room.room_stats.save()
+    currnumpot = json.loads(game_room.room_stats.numbers_pot)
+
+    if len(currnumpot) == 0:
+        pot_numbers = map(str,  list(range(1, 91)))
+        numbers_pot = json.dumps(list(pot_numbers))
+        game_room.room_stats.numbers_pot = numbers_pot
+        game_room.room_stats.save()
     
     numbers_called = json.loads(game_room.room_stats.numbers_called)
     numbers_pot = json.loads(game_room.room_stats.numbers_pot)
-
-    # print("numbers_pot on start are: ", numbers_pot)
-    # print("numbers_called on start (should be empty) are: ", numbers_called)
 
     return HttpResponse("Game room stats initialized")
 

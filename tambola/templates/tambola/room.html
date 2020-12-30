@@ -72,12 +72,26 @@
 
 {% block content %}
 
-<h3>Game Room: {{room_name}} </h3>
+
+<h3 class="textwhite">Game Room: {{room_name}} </h3>
 <div>
-	<button class="btn" id='start-game'>Start Game</button>
-	<h1 class = "text-center"><span id = "number-called"></span></h1>
+	
+	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#howToModal">How to Play</button>
+
+	<button type="button" class="btn btn-primary"  id='pause-game'>Pause</button>
+
+	<button type="button" class="btn btn-success" value="On" id='speak-game'><svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-mic" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		<path fill-rule="evenodd" d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+		<path fill-rule="evenodd" d="M10 8V3a2 2 0 1 0-4 0v5a2 2 0 1 0 4 0zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3z"/>
+	</svg></button>
+	
+  
+	<h1 class = "text-center"><span id = "number-called" class="textwhite"></span></h1>
 </div>
 <br>
+<div class="textwhite">
+Host: {{host}}
+</div>
 
 <!-- Ticket -->
 <div class="room-container">
@@ -98,7 +112,42 @@
 				</tr>
 				{% endfor %}
 			</table>
-		</div>	
+		</div>
+		
+		<!-- Before Game Start Panel (Game Settings) : Seen by Host -->
+		<div class="modal fade" id="waitingModal" tabindex="-1" aria-labelledby="waitingModalLabel" aria-hidden="true" data-backdrop="static">
+			<div class="modal-dialog modal-lg">
+			  <div class="modal-content">
+				<div class="modal-header">
+				  <h2 class="modal-title" id="waitingModalLabel">Welcome to Room: <span id="copy-room">{{room_name}}</span></h2>
+				</div>
+				<div class="modal-body">
+					<h3 id="wait-text"></h3>
+				  <h3>Current users in this room</h3> 
+				  <ul id="curr_u_list">
+					   
+				  {% for u in users_in_room %}
+					<li id={{u}}>{{u}}</li>
+					  {% endfor %} 
+				  </ul>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#howToModal">
+						How to Play
+					  </button>
+					
+					  <div class="small-text" id="sec-text">
+						<span>Set interval</span>
+						<label class="radio-inline small-text"><input type="radio" id="5sec" name="optradio"><br>5 sec</label>
+						<label class="radio-inline small-text"><input type="radio" id="7sec" name="optradio" checked><br>7 sec</label>
+						<label class="radio-inline small-text"><input type="radio" id="10sec" name="optradio"><br>10 sec</label>  
+					  </div>
+					<button class="btn" id='start-game'>Start Game</button>
+				</div>
+			  </div>
+			</div>
+		</div>
+	
 
 <!-- Chat Window -->
 	<div class="col-4">
@@ -180,9 +229,26 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
 
 
+<!-- Game Settings Panel -->
+<script>
+	$(window).on('load',function(){
+		const shouldHide = JSON.parse(document.getElementById('should_hide').textContent);
+		if (shouldHide){
+			$('#start-game').remove();
+			$('#pause-game').remove();
+			$('#sec-text').remove();
+			document.querySelector('#wait-text').innerHTML = "Waiting for host to start the game!";
+		}
+		else {
+			document.querySelector('#wait-text').innerHTML = "Other users are waiting for you to start the game 🤠!";
+		}
+		$('#waitingModal').modal('show');
+	});
+</script>
 
 {{ request.user.username|json_script:"user_username" }}
 {{ room_name|json_script:"room-name" }}
+{{ ishost|json_script:"should_hide"}}
 <script>
 
 	const user_username = JSON.parse(document.getElementById('user_username').textContent);
@@ -288,11 +354,22 @@
 		messageInputDom.value = '';
 	}
 
+	var TIME_INTERVAL;
+	var inter;
+	var speak = true;
 	document.querySelector('#start-game').onclick = function (e) {
+		if(document.getElementById("5sec").checked === true){
+			TIME_INTERVAL = 5000;
+		} else if(document.getElementById("7sec").checked === true){
+			TIME_INTERVAL = 7000;
+		} else if((document.getElementById("10sec").checked === true)){
+			TIME_INTERVAL = 10000;
+		}
 		startGame();
-		window.setInterval(drawNumber, 3000);
+		inter = setInterval(drawNumber, TIME_INTERVAL);
 		// drawNumber();
 		document.querySelector('#start-game').innerHTML = "Game Started";
+		$('#waitingModal').modal("hide");
 	}
 
 	function startGame(){    
@@ -304,7 +381,8 @@
 
 		request.open("GET", "/tambola/start/"+roomName, true)
 		request.send()
-    }
+	}
+	
 
 	function drawNumber(){    
         let request = new XMLHttpRequest()
@@ -317,12 +395,72 @@
 		request.send()
     }
 
+
+	function pauseGame(){    
+		if(document.querySelector('#pause-game').innerHTML === "Pause"){
+			clearInterval(inter);
+			inter = "";
+			document.querySelector('#pause-game').innerHTML = "Resume";
+			chatSocket.send(JSON.stringify({
+			'message': 'paused the game!!!',
+			'username': user_username,
+			}));
+		} else if (document.querySelector('#pause-game').innerHTML === "Resume"){
+			startGame();
+			inter = setInterval(drawNumber, TIME_INTERVAL);
+			document.querySelector('#pause-game').innerHTML = "Pause";
+			chatSocket.send(JSON.stringify({
+			'message': 'resumed the game!!!',
+			'username': user_username,
+			}));
+		}
+	}
+
+	function endGame(){    
+		clearInterval(inter);
+		inter = "";
+		speak = false;
+		document.querySelector('#pause-game').style.visibility = 'hidden';
+		chatSocket.send(JSON.stringify({
+		'message': 'Thank You all for playing !!!',
+		'username': user_username,
+		}));	
+	}
+	
+
+	document.querySelector('#pause-game').onclick = function (e) {
+		pauseGame();
+	}
+
+	document.querySelector('#speak-game').onclick = function (e) {
+		if(document.querySelector('#speak-game').value === "On"){
+			speak = false;
+			document.querySelector('#speak-game').value = "Off";
+			document.querySelector('#speak-game').classList.remove("btn-success");
+			document.querySelector('#speak-game').classList.add("btn-danger");
+		} else if(document.querySelector('#speak-game').value === "Off"){
+			speak = true;
+			document.querySelector('#speak-game').value = "On";
+			document.querySelector('#speak-game').classList.remove("btn-danger");
+			document.querySelector('#speak-game').classList.add("btn-success");
+		}
+	}
+
 	// when socket recieves a message
 	chatSocket.onmessage = function (e) {
+		
 		const data = JSON.parse(e.data);
 		if(data.hasOwnProperty('number_drawn')){
+			$('#waitingModal').modal("hide");
+
 			console.log(data)
 			document.querySelector('#number-called').innerHTML = (data.number_drawn)
+			// speak
+			if (speak && 'speechSynthesis' in window) {
+				speechSynthesis.speak(new SpeechSynthesisUtterance(data.number_drawn));
+			}
+
+
 			document.querySelector('#number-history').innerHTML = (data.numbers_called)
 			document.querySelector('#number-pot').innerHTML = (data.numbers_pot)
 			winners = JSON.parse(data.winners)
@@ -334,6 +472,15 @@
 		}
 		else if(data.hasOwnProperty('connection_msg')){
 			console.log(data)
+
+			// user joined list
+			if (document.querySelector('#'+data.connection_user)) {
+				console.log('repeat')
+			}
+			else{
+				$("#curr_u_list").append('<li id="data.connection_user">' + data.connection_user + '</li>')
+			}
+
 			document.querySelector('#chat-text').value += (data.connection_msg + ': ' + data.connection_user + '\n')
 		} else {
 			console.log(data)
