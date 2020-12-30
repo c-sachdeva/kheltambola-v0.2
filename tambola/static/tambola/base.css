@@ -1,0 +1,132 @@
+.big-heading {
+    font-size: xx-large;
+    font-weight: bold;
+    font-family: sans-serif;
+    text-align: center;
+    padding: 25px 50px;
+}
+
+.user-info {
+    text-align: right;
+    font-family: sans-serif; 
+    padding-right: 10px;
+    font-size: x-large;
+}
+
+.search-bar {
+    text-align: center;
+    padding: 25px 50px;
+}
+
+.content {
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+    font-family: sans-serif;
+    font-size: x-large;
+    padding: 25px 50px;
+}
+
+.errorlist {
+    color:red;
+}
+
+.list {
+    padding: 3px;
+}
+
+.list-link {
+    padding: 5px;
+}
+
+.list-link:hover {
+     background-color:lightgray;
+}
+
+th {
+    font-weight: normal;
+    text-align: left;
+}
+
+a {
+     text-decoration: none;
+     color:black;
+}
+
+button {
+    font-size: x-large;
+    padding: 3px;
+}
+
+input {
+    font-size: x-large;
+}
+
+div, form {
+    padding: 4px;
+}
+
+
+.navlink {
+    background-color: lightgray;
+}
+
+.top_nav {
+    background-color: #DEB887;
+}
+
+.letter {
+    padding: 3px;
+    font-family: sans-serif;
+    font-size: x-large;
+
+}
+
+.letter:hover {
+     background-color:lightgray;
+}
+
+.dropdown-toggle:hover {
+    cursor: pointer;
+}
+
+.post-wrapper {
+    font-size: large;
+    font-family: sans-serif;
+    padding: 25px 50px;
+}
+
+.post-content {
+    font-size: x-large;
+}
+
+.comment {
+    font-size: normal;
+    font-weight: lighter;
+    font-family: sans-serif;
+    padding-left: 100px;
+}
+
+h3 {
+    text-align: center;
+    padding: 25px 50px;
+}
+
+.number-button {
+    font-size: 50pt;
+    /* padding: 10px; */
+    width: 100px;
+    height: 100px;
+}
+.number-button-click {
+    background-color: yellow;
+}
+
+.room-container {
+    width: 90vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -45vw;
+    margin-right: -45vw;
+  }

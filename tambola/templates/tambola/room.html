@@ -1,0 +1,346 @@
+{% extends "tambola/base.html" %}
+
+{% block user-info %}
+    
+<script type="text/javascript">
+	// on page refresh, mark already clicked numbers
+	window.onload = function() {
+		const btnum = "-1"
+		const room_name = JSON.parse(document.getElementById('room-name').textContent);
+		var req = new XMLHttpRequest()
+		req.onreadystatechange = function() {
+			if(req.readyState != 4) return
+			if(req.status != 200) return
+			var response = JSON.parse(req.responseText);
+			console.log("On load: " + response)
+			mark_values(response);
+		}
+		req.open("POST", "/tambola/click_button", true);
+		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		req.send("room_name="+room_name+"&button_num="+btnum+"&csrfmiddlewaretoken="+getCSRFToken());
+	};
+	
+	function mark_values(response) {
+		console.log("marking")
+		
+		response.forEach(myFunctionMark);
+
+		function myFunctionMark(item, index) {
+			var button = document.getElementById("id_"+item)
+			button.classList.add("number-button-click")
+		}
+
+	}
+
+	function clickButton(button_element, room_name){
+		btnum = button_element.value
+		var req = new XMLHttpRequest()
+		req.onreadystatechange = function() {
+			if(req.readyState != 4) return
+			if(req.status != 200) return
+			var response = JSON.parse(req.responseText);
+			console.log("On click: " + response)
+			mark_values(response);
+		}
+		req.open("POST", "/tambola/click_button", true);
+		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		req.send("room_name="+room_name+"&button_num="+btnum+"&csrfmiddlewaretoken="+getCSRFToken());
+	}
+
+	function getCSRFToken() {
+	let cookies = document.cookie.split(";")
+	for (let i = 0; i<cookies.length; i++) {
+		let c = cookies[i].trim()
+		if(c.startsWith("csrftoken=")) {
+			return c.substring("csrftoken=".length, c.length)
+			}
+		}
+	}
+
+</script>
+
+
+
+<div class="dropdown">
+	<span id="id_logged_in_user_name">{{user.first_name}} {{user.last_name}}</span>
+	<span><a href="{% url 'action_personal_prof' %}" id="id_nav_profile">My Profile</a></span>
+    <span><a id="id_nav_logout" href="{% url 'action_logout' %}">Logout</a></span>
+</div>
+    
+{% endblock %}
+
+
+{% block content %}
+
+<h3>Game Room: {{room_name}} </h3>
+<div>
+	<button class="btn" id='start-game'>Start Game</button>
+	<h1 class = "text-center"><span id = "number-called"></span></h1>
+</div>
+<br>
+
+<!-- Ticket -->
+<div class="room-container">
+	<div class="row">
+		<div class="col ticket-wrapper">
+			Player : {{user_profile.id_user.username}}
+			<table class="ticket-table">
+				{% for rowname, row in ticket_numbers.items %}
+				<tr class="ticket-row">
+					{% for number in row %}
+						{% if number != "0" %}
+						<td><button class="btn rounded number-button" id="id_{{number}}" value="{{number}}" onclick="clickButton(this, '{{room_name}}')">{{number}}</button></td>
+						{% else %}
+						<td><button class="btn rounded number-button"></button></td>
+					{% endif %}
+					
+					{% endfor %}
+				</tr>
+				{% endfor %}
+			</table>
+		</div>	
+
+<!-- Chat Window -->
+	<div class="col-4">
+		<form id="chat-form" onSubmit="return false;">
+			<div class="form-group">
+				<label for="exampleFormControlTextarea1" class="h4">Chat</label>
+				<textarea disabled class="form-control" id="chat-text" rows="10"></textarea><br>
+			</div>
+			<div class="form-group">
+				<input class="form-control" id="input" type="text"></br>
+				<input class="btn btn-light btn-lg" id="smile" type="button" value="😃">
+				<input class="btn btn-light btn-lg" id="angry" type="button" value="😡">
+				<input class="btn btn-light btn-lg" id="alien" type="button" value="👽">
+				<input class="btn btn-light btn-lg" id="poop" type="button" value="💩">
+				<input class="btn btn-light btn-lg" id="clown" type="button" value="🤡">
+				<input class="btn btn-light btn-lg" id="eyes" type="button" value="👀">
+				<input class="btn btn-light btn-lg" id="wave" type="button" value="👋">
+				<input class="btn btn-light btn-lg" id="write" type="button" value="✍">
+				<input class="btn btn-light btn-lg" id="broken-heart" type="button" value="💔">
+				<input class="btn btn-light btn-lg" id="middle-finger" type="button" value="🖕">
+				<input class="btn btn-light btn-lg" id="cowboy" type="button" value="🤠">
+				<input class="btn btn-light btn-lg" id="money-mouth" type="button" value="🤑">
+				
+			</div>
+			<input class="btn btn-secondary btn-lg btn-block" id="submit" type="button" value="Send">
+		</form>
+	</div>
+</div>
+
+<div>
+	<p>Winners: </p>
+	<p class="h1" id="winner-info"></p>
+</div>
+
+<div>
+	<p>Numbers Called</p>
+	<p class="h2" id="number-history"></p>
+</div>
+
+<div>
+	<p>Numbers Pot</p>
+	<p class="h3" id="number-pot"></p>
+</div>
+
+</div>
+
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#howToModal">
+	How to Play
+  </button>
+  
+  <!-- Modal -->
+  <div class="modal fade" id="howToModal" tabindex="-1" aria-labelledby="howToModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h2 class="modal-title" id="howToModalLabel">How to Play Tambola!</h2>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		  </button>
+		</div>
+		<div class="modal-body">
+		  <h3>The rules of our game are simple and here's a few:</h3> 
+		  <ul>
+			  <li>If you are the host, press start to begin the game</li>
+			  <li>Once the game has started, numbers will be called out every 5 seconds</li>
+			  <li>If you see a number called out that's on your ticket, click it and you will have your play recorded!</li>
+			  <li>Feel free to chat with the other players, but first one to blackout their board wins :)</li>
+		  </ul>
+		</div>
+		<div class="modal-footer">
+		  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+
+
+{{ request.user.username|json_script:"user_username" }}
+{{ room_name|json_script:"room-name" }}
+<script>
+
+	const user_username = JSON.parse(document.getElementById('user_username').textContent);
+	const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+	const chatSocket = new WebSocket(
+			'ws://' +
+			window.location.host +
+			'/ws/tambola/room/' +
+			roomName +
+			'/'
+		);
+	
+	document.querySelector('#smile').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '😃',
+			'username': user_username,
+		}));
+	}
+
+	document.querySelector('#angry').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '😡',
+			'username': user_username,
+		}));
+	}
+
+	document.querySelector('#poop').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '💩',
+			'username': user_username,
+		}));
+	}
+
+	document.querySelector('#clown').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '🤡',
+			'username': user_username,
+		}));
+	}
+
+	document.querySelector('#poop').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '💩',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#alien').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '👽',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#eyes').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '👀',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#wave').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '👋',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#write').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '✍',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#broken-heart').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '💔',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#cowboy').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '🤠',
+			'username': user_username,
+		}));
+	}
+	document.querySelector('#money-mouth').onclick = function (e) {
+		chatSocket.send(JSON.stringify({
+			'message': '🤑',
+			'username': user_username,
+		}));
+	}
+	
+	
+	// when chat submit button is clicked
+	document.querySelector('#submit').onclick = function (e) {
+		const messageInputDom = document.querySelector('#input');
+		var message = messageInputDom.value;
+		if(message.trim() == ''){
+			return;
+		}
+		chatSocket.send(JSON.stringify({
+			'message': message,
+			'username': user_username,
+		}));
+		messageInputDom.value = '';
+	}
+
+	document.querySelector('#start-game').onclick = function (e) {
+		startGame();
+		window.setInterval(drawNumber, 3000);
+		// drawNumber();
+		document.querySelector('#start-game').innerHTML = "Game Started";
+	}
+
+	function startGame(){    
+        let request = new XMLHttpRequest()
+		request.onreadystatechange = function() {
+			if (request.readyState != 4) return
+			console.log(request.responseText)
+		}
+
+		request.open("GET", "/tambola/start/"+roomName, true)
+		request.send()
+    }
+
+	function drawNumber(){    
+        let request = new XMLHttpRequest()
+		request.onreadystatechange = function() {
+			if (request.readyState != 4) return
+			console.log(request.responseText);
+		}
+
+		request.open("GET", "/tambola/call/"+roomName, true)
+		request.send()
+    }
+
+	// when socket recieves a message
+	chatSocket.onmessage = function (e) {
+		const data = JSON.parse(e.data);
+		if(data.hasOwnProperty('number_drawn')){
+			console.log(data)
+			document.querySelector('#number-called').innerHTML = (data.number_drawn)
+			document.querySelector('#number-history').innerHTML = (data.numbers_called)
+			document.querySelector('#number-pot').innerHTML = (data.numbers_pot)
+			winners = JSON.parse(data.winners)
+			document.querySelector('#winner-info').innerHTML = " "
+			for (var key in winners) {
+				document.querySelector('#winner-info').innerHTML += key + ": " + winners[key] + "   "
+			}
+			
+		}
+		else if(data.hasOwnProperty('connection_msg')){
+			console.log(data)
+			document.querySelector('#chat-text').value += (data.connection_msg + ': ' + data.connection_user + '\n')
+		} else {
+			console.log(data)
+			document.querySelector('#chat-text').value += (data.username + ': ' + data.message + '\n')
+		}
+	}
+
+</script>
+
+{% endblock %}

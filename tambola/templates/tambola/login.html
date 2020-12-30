@@ -1,0 +1,32 @@
+{% extends "tambola/base.html" %}
+
+{% block user-info %}
+    <div>
+        <a href="{% url 'action_register' %}">
+            <span id="id_register_link">Register</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+    <h3><span id="id_name_of_page">Login</span></h3>
+
+    <form method="post" action="{% url 'action_login' %}">
+        <span class="errorlist">
+            {% if login_error %} {{login_error}} {% endif %}
+        </span>
+        <br>
+        {% for field in form.visible_fields %}
+                <tr>
+                    <td>{{field.label_tag}}</td>
+                    <td>{{field}}</td>
+                </tr>
+        {% endfor %}
+        {% csrf_token %}
+        <span id="id_login_button"><button type="submit">Submit</button>
+
+    </form>
+
+{% endblock %}
+

@@ -1,0 +1,44 @@
+{% extends "tambola/base.html" %}
+
+{% block user-info %}
+    
+<div class="dropdown">
+	<span id="id_logged_in_user_name">{{user.first_name}} {{user.last_name}}</span>
+	<span><a href="{% url 'action_personal_prof' %}" id="id_nav_profile">My Profile</a></span>
+    <span><a id="id_nav_logout" href="{% url 'action_logout' %}">Logout</a></span>
+</div>
+    
+{% endblock %}
+
+
+{% block content %}
+<div class="text-center">
+    <h3><span id="id_name_of_page">Profile page for {{user.first_name}} {{user.last_name}}</span></h3>
+
+    <form enctype="multipart/form-data" method="POST" action="{% url 'action_personal_prof' %}">
+        
+        <img id="id_user_picture" class = "w-25 h-25 img-thumbnail" src="{% url 'get_photo' user.username %}" alt="{{user}}">
+        <br>
+
+        <div class="user-bio">
+			{% for field in profform.visible_fields %}
+                    <!-- <p>{{field.label_tag}}</p> -->
+                    <p>{{field}}</p>
+                    <p class="errorlist">
+                        {% for error in field.errors %} {{error}} {% endfor %}
+                    </p>
+            {% endfor %}
+        </div>
+        {% csrf_token %}
+        <input type="submit" id="id_update_profile_button" value="Submit">
+
+    </form>
+	Lifetime Wins: {{user.total_wins}} <br> Lifetime Score: {{user.total_score}}
+</div>
+<br>
+
+
+
+
+{% endblock %}
+

@@ -1,0 +1,23 @@
+{% extends "tambola/base.html" %}
+
+{% block user-info %}
+    
+<div class="dropdown">
+	<span id="id_logged_in_user_name">{{user.first_name}} {{user.last_name}}</span>
+	<span><a href="{% url 'action_personal_prof' %}" id="id_nav_profile">My Profile</a></span>
+    <span><a id="id_nav_logout" href="{% url 'action_logout' %}">Logout</a></span>
+</div>
+    
+{% endblock %}
+
+{% block content %}
+
+<form method = "post">
+	<table>
+		{{form}}
+	</table>
+	{% csrf_token %}
+	<button type="submit" id="id_register_button">Join Room</button>
+</form>
+
+{% endblock %}
